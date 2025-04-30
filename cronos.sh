@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 
 SERVER_NAME="${CRONOS_SERVER_NAME:-minecraft}"
+TARGET_DIR="${CRONOS_TARGET_DIR:-$PWD}"
 BACKUP_DIR="${CRONOS_BACKUP_DIR:-$HOME/minecraft_backups}"
 KEEP_COUNT="${CRONOS_KEEP_COUNT:-10}"
 
@@ -36,9 +37,10 @@ EOF
   echo
 
   echo "Options:"
-  echo "--help | -h         show this message"
-  echo "--backup-dir <dir>  set dest directory"
-  echo "--keep-count <num>  set how many old backups to keep (deletes backups older than <num>), default: 10. set to a negative number to keep all of them."
+  echo "--help | -h              show this message"
+  echo "--backup-dir <dir>       set dest directory"
+  echo "--keep-count <num>       set how many old backups to keep (deletes backups older than <num>), default: 10. set to a negative number to keep all of them."
+  echo "--dir <target directory> set server to backup"
   echo
 
   echo "Environment Variables:"
@@ -46,6 +48,7 @@ EOF
   echo "CRONOS_SERVER_NAME=<your backup prefix>"
   echo "CRONOS_BACKUP_DIR=<backup destination directory>"
   echo "CRONOS_KEEP_COUNT=<how many backups to keep before deleting them>"
+  echo "CRONOS_TARGET_DIR=<server directory>"
 
   exit 1
 }
@@ -122,7 +125,7 @@ backup() {
   timestamp=$(date +"%F_%H-%M-%S") || exit
   backup_name="${SERVER_NAME}_${timestamp}.tar.gz"
   echo -n "Saving ${backup_name} to ${BACKUP_DIR}... "
-  err=$(tar -cvzf "${BACKUP_DIR}/${backup_name}" . 2>&1)
+  err=$(tar -cvzf "${BACKUP_DIR}/${backup_name}" "$TARGET_DIR" 2>&1)
   if [ "$?" -ne 0 ]; then
     if [ "$should_restart" -eq 1 ]; then
       tmux send-keys -t "$tmux_pane_id" save-on Enter
@@ -159,10 +162,11 @@ arg_or_die() {
   esac
   echo "$arg"
 }
+
+action=""
 while true; do
   [ -z "$1" ] && break
 
-  action=""
   case "$1" in
     --help|-h|help)
       shift
@@ -178,6 +182,12 @@ while true; do
     --keep-count)
       shift
       KEEP_COUNT=$(arg_or_die "--keep-count" "$1" numeric) || exit
+      shift
+      ;;
+
+    --dir)
+      shift
+      TARGET_DIR=$(arg_or_die "--dir" "$1") || exit
       shift
       ;;
 
