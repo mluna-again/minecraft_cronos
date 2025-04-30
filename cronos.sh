@@ -38,7 +38,7 @@ EOF
   echo "Options:"
   echo "--help | -h         show this message"
   echo "--backup-dir <dir>  set dest directory"
-  echo "--keep-count <num>  set how many old backups to keep (deletes backups older than <num>), default: 10"
+  echo "--keep-count <num>  set how many old backups to keep (deletes backups older than <num>), default: 10. set to a negative number to keep all of them."
   echo
 
   echo "Environment Variables:"
@@ -52,12 +52,26 @@ EOF
 
 [ -z "$1" ] && usage
 
+cleanup_old_backups() {
+  if (( KEEP_COUNT < 0 )); then
+    echo "Keeping all backups. OK."
+    return
+  fi
+
+  echo -n "Cleaning up old backups older than last $KEEP_COUNT archives... "
+
+  find "$BACKUP_DIR" -mindepth 1 -type f -iname "*.tar.gz" | sort -hr | awk "NR>$KEEP_COUNT" | xargs -I{} rm {}
+  echo "OK."
+}
+
 backup() {
   if [ ! -d "$BACKUP_DIR" ]; then
     echo -n "Creating backup directory: ${BACKUP_DIR}... "
     mkdir -p "$BACKUP_DIR" || exit
     echo "OK."
   fi
+
+  cleanup_old_backups
 
   fabric_pid=$(pgrep -f fabric-server)
   should_restart=0
@@ -137,7 +151,7 @@ arg_or_die() {
 
   case "$type" in
     numeric)
-      if grep -Eqv "^[0-9]+$" <<< "$arg"; then
+      if grep -Eqv "^-?[0-9]+$" <<< "$arg"; then
         echo "${name}: invalid argument ${arg}" >&2
         exit 1
       fi
