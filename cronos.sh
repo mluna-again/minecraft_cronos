@@ -3,6 +3,11 @@
 SERVER_NAME="minecraft"
 BACKUP_DIR="$HOME/minecraft_backups"
 
+if ! grep --version | grep -iq gnu; then
+	echo "Sorry, this script needs GNU grep!" >&2
+	exit 1
+fi
+
 jobs_done() {
 	cat - <<EOF
 
