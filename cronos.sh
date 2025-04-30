@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
-SERVER_NAME="minecraft"
-BACKUP_DIR="$HOME/minecraft_backups"
+SERVER_NAME="${CRONOS_SERVER_NAME:-minecraft}"
+BACKUP_DIR="${CRONOS_BACKUP_DIR:-$HOME/minecraft_backups}"
 
 if ! grep --version | grep -iq gnu; then
 	echo "Sorry, this script needs GNU grep!" >&2
@@ -37,6 +37,12 @@ EOF
 	echo "Options:"
 	echo "--help | -h        show this message"
 	echo "--backup-dir <dir> set dest directory"
+  echo
+
+  echo "Environment Variables:"
+  echo "You can use the following variables instead of manually using flags"
+  echo "CRONOS_SERVER_NAME=<your backup prefix>"
+  echo "CRONOS_BACKUP_DIR=<backup destination directory>"
 
 	exit 1
 }
