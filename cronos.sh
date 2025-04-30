@@ -72,7 +72,7 @@ backup() {
 		fi
 			
 		should_restart=1
-		msg="$(date +'%H:%M:%S') SERVER IS RESTARTING FOR A BACKUP. SEE YOU ON THE OTHER SIDE!"
+		msg="$(date +'%H:%M:%S') SERVER IS BACKING UP. SEE YOU ON THE OTHER SIDE!"
 		tmux send-keys -t "$tmux_pane_id" say Space "$msg" Enter || exit
 		tmux send-keys -t "$tmux_pane_id" save-off Enter || exit
 		tmux send-keys -t "$tmux_pane_id" save-all Space flush Enter || exit
