@@ -29,13 +29,14 @@ Welcome!
 
 EOF
 
-	echo "Usage:"
-	echo "- backup: creates a backup at this current time (stops server if its running)"
+	echo "Commands:"
+	echo "backup: creates a backup at this current time (stops server if its running)"
 	echo "$ cronos.sh backup"
 	echo
 
 	echo "Options:"
-	echo "--help | -h   show this message"
+	echo "--help | -h        show this message"
+	echo "--backup-dir <dir> set dest directory"
 
 	exit 1
 }
@@ -98,7 +99,7 @@ backup() {
 	timestamp=$(date +"%F_%H-%M-%S") || exit
 	backup_name="${SERVER_NAME}_${timestamp}.tar.gz"
 	echo -n "Saving ${backup_name} to ${BACKUP_DIR}... "
-	err=$(tar --force-local -cvzf "${BACKUP_DIR}/${backup_name}" . 2>&1)
+	err=$(tar -cvzf "${BACKUP_DIR}/${backup_name}" . 2>&1)
 	if [ "$?" -ne 0 ]; then
 		if [ "$should_restart" -eq 1 ]; then
 			tmux send-keys -t "$tmux_pane_id" save-on Enter
@@ -116,20 +117,38 @@ backup() {
 while true; do
 	[ -z "$1" ] && break
 
+	something_done=0
 	case "$1" in
-		--help|-h)
+		--help|-h|help)
 			shift
 			usage
+			;;
+
+		--backup-dir)
+			shift
+			if [ -z "$1" ]; then
+				echo "--backup-dir: argument required" >&1
+				exit 1
+			fi
+			BACKUP_DIR="$1"
+			shift
 			;;
 
 		backup)
 			shift
 			backup
+			something_done=1
 			;;
 
 		*)
+			echo "Invalid option: $1" >&1
 			shift
 			usage
 			;;
 	esac
 done
+
+if [ "$something_done" -eq 0 ]; then
+	echo "Nothing to do." >&2
+	exit 1
+fi
