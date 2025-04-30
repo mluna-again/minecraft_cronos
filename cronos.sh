@@ -117,11 +117,11 @@ backup() {
 while true; do
 	[ -z "$1" ] && break
 
-	something_done=0
+  action=""
 	case "$1" in
 		--help|-h|help)
 			shift
-			usage
+			action=usage
 			;;
 
 		--backup-dir)
@@ -136,19 +136,20 @@ while true; do
 
 		backup)
 			shift
-			backup
-			something_done=1
+			action=backup
 			;;
 
 		*)
 			echo "Invalid option: $1" >&1
 			shift
-			usage
+			action=usage
 			;;
 	esac
 done
 
-if [ "$something_done" -eq 0 ]; then
+if [ -z "$action" ]; then
 	echo "Nothing to do." >&2
 	exit 1
 fi
+
+"$action"
