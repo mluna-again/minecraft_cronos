@@ -133,7 +133,7 @@ while true; do
     --backup-dir)
       shift
       if [ -z "$1" ]; then
-        echo "--backup-dir: argument required" >&1
+        echo "--backup-dir: argument required" >&2
         exit 1
       fi
       BACKUP_DIR="$1"
@@ -146,7 +146,7 @@ while true; do
       ;;
 
     *)
-      echo "Invalid option: $1" >&1
+      echo "Invalid option: $1" >&2
       shift
       action=usage
       ;;
