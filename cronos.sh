@@ -2,6 +2,7 @@
 
 SERVER_NAME="${CRONOS_SERVER_NAME:-minecraft}"
 BACKUP_DIR="${CRONOS_BACKUP_DIR:-$HOME/minecraft_backups}"
+KEEP_COUNT="${CRONOS_KEEP_COUNT:-10}"
 
 if ! grep --version | grep -iq gnu; then
   echo "Sorry, this script needs GNU grep!" >&2
@@ -35,14 +36,16 @@ EOF
   echo
 
   echo "Options:"
-  echo "--help | -h        show this message"
-  echo "--backup-dir <dir> set dest directory"
+  echo "--help | -h         show this message"
+  echo "--backup-dir <dir>  set dest directory"
+  echo "--keep-count <num>  set how many old backups to keep (deletes backups older than <num>), default: 10"
   echo
 
   echo "Environment Variables:"
   echo "You can use the following variables instead of manually using flags"
   echo "CRONOS_SERVER_NAME=<your backup prefix>"
   echo "CRONOS_BACKUP_DIR=<backup destination directory>"
+  echo "CRONOS_KEEP_COUNT=<how many backups to keep before deleting them>"
 
   exit 1
 }
@@ -120,6 +123,28 @@ backup() {
   jobs_done
 }
 
+
+arg_or_die() {
+  local name arg type
+  name="$1"
+  arg="$2"
+  type="$3"
+
+  if [ -z "$arg" ]; then
+    echo "${name}: argument required" >&2
+    exit 1
+  fi
+
+  case "$type" in
+    numeric)
+      if grep -Eqv "^[0-9]+$" <<< "$arg"; then
+        echo "${name}: invalid argument ${arg}" >&2
+        exit 1
+      fi
+      ;;
+  esac
+  echo "$arg"
+}
 while true; do
   [ -z "$1" ] && break
 
@@ -132,11 +157,13 @@ while true; do
 
     --backup-dir)
       shift
-      if [ -z "$1" ]; then
-        echo "--backup-dir: argument required" >&2
-        exit 1
-      fi
-      BACKUP_DIR="$1"
+      BACKUP_DIR=$(arg_or_die "--backup-dir" "$1") || exit
+      shift
+      ;;
+
+    --keep-count)
+      shift
+      KEEP_COUNT=$(arg_or_die "--keep-count" "$1" numeric) || exit
       shift
       ;;
 
