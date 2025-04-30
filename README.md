@@ -1,4 +1,12 @@
-# How to use with crontab
+# Usage
+This is script is meant for servers running inside a tmux session.
+After you have your server running inside tmux, you can manually run the script
+```sh
+$ ./cronos.sh backup
+```
+
+or setup a cron job
+
 ```sh
 $ crontab -e
 # run at 5am every day, and save logs
