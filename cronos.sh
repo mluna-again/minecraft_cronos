@@ -87,7 +87,7 @@ backup() {
   if [ -z "$fabric_pid" ]; then
     echo "Server is not running. OK."
   else
-    if ! tmux info &>/dev/null; then
+    if ! ps aux | grep -iq tmux; then
       echo "Server is running outside of tmux! Please run it inside a tmux session." >&2
       exit 1
     fi
