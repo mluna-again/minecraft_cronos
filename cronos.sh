@@ -4,6 +4,7 @@ SERVER_NAME="${CRONOS_SERVER_NAME:-minecraft}"
 TARGET_DIR="${CRONOS_TARGET_DIR:-$PWD}"
 BACKUP_DIR="${CRONOS_BACKUP_DIR:-$HOME/minecraft_backups}"
 KEEP_COUNT="${CRONOS_KEEP_COUNT:-10}"
+_TMUX_SESSION=""
 
 if ! grep --version | grep -iq gnu; then
   echo "Sorry, this script needs GNU grep!" >&2
@@ -31,6 +32,10 @@ Welcome!
 
 EOF
 
+  echo "This script is meant to work alongside tmux, it *can* work outside tmux but only if the server is offline."
+  echo "cronos.sh searches for a pane named \`java\` inside tmux and assumes it is your minecraft server, therefore, you *can't* have multiple panes with that name, see --tmux-session for a workaround."
+  echo
+
   echo "Commands:"
   echo "backup: creates a backup at this current time (stops server if its running)"
   echo "$ cronos.sh backup"
@@ -41,6 +46,7 @@ EOF
   echo "--backup-dir <dir>       set dest directory"
   echo "--keep-count <num>       set how many old backups to keep (deletes backups older than <num>), default: 10. set to a negative number to keep all of them."
   echo "--dir <target directory> set server to backup"
+  echo "--tmux-session <session> search pane named java inside of <session> instead of the whole tmux server. useful when you need to run multiple servers, or multiple java programs. you just need to put your server in a separate tmux session."
   echo
 
   echo "Environment Variables:"
@@ -86,10 +92,17 @@ backup() {
       exit 1
     fi
 
-    tmux_pane_id=$(tmux list-panes -a -F '#{pane_id} #{pane_current_command}' | grep -i "java" | awk '{print $1}')
+    if [ -z "$_TMUX_SESSION" ]; then
+      tmux_pane_id=$(tmux list-panes -a -F '#{pane_id} #{pane_current_command}' | grep -i "java" | awk '{print $1}')
+    else
+      tmux_pane_id=$(tmux list-panes -s -t "$_TMUX_SESSION" -F '#{pane_id} #{pane_current_command}' | grep -i "java" | awk '{print $1}')
+    fi
     if [ -z "$tmux_pane_id" ]; then
       echo "Server is running outside of tmux! Please run it inside a tmux session." >&2
       echo "Tip: this can also mean you wrapped your server start command in a script but did not use exec"
+      if [ -n "$_TMUX_SESSION" ]; then
+        echo "Tip: this can also mean that the provided session with --tmux-session is wrong or doesn't exist"
+      fi
       exit 1
     fi
     pids_found=$(wc -l <<< "$tmux_pane_id")
@@ -188,6 +201,12 @@ while true; do
     --dir)
       shift
       TARGET_DIR=$(arg_or_die "--dir" "$1") || exit
+      shift
+      ;;
+
+    --tmux-session)
+      shift
+      _TMUX_SESSION=$(arg_or_die "--tmux-session" "$1") || exit
       shift
       ;;
 
